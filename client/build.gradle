@@ -8,10 +8,9 @@ dependencies {
 
     // Реализация логгера (выберите одну)
     implementation 'ch.qos.logback:logback-classic:1.4.7' // рекомендуемый вариант
-    // ИЛИ
-    // implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0' // если предпочитаете Log4j
 
-    // Lombok (если нужно)
+
+    // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.28'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
 }

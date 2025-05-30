@@ -135,24 +135,33 @@ public class ServerApplication implements IHistoryProvider {
 
     private void initStorage() {
         logger.log(Level.INFO, "Загрузка коллекции из файла: {0}", filename);
-        XMLReader xmlReader =  new XMLReader() ;
+        XMLReader xmlReader = new XMLReader();
         Hashtable<String, City> map = new Hashtable<>();
-        HashSet<Integer> setOfId = new HashSet<>();
+        HashSet<Long> setOfId = new HashSet<>();
 
         try {
             map = xmlReader.loadFromXML(filename);
-            logger.log(Level.INFO, "Успешно загружено {0} элементов", map.size());
+
+            if (map.isEmpty()) {
+                logger.log(Level.INFO, "Коллекция пуста (файл {0} новый или не содержит данных)", filename);
+            } else {
+                logger.log(Level.INFO, "Успешно загружено {0} элементов", map.size());
+            }
+
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Ошибка загрузки коллекции из файла", e);
+            logger.log(Level.SEVERE, "ФАТАЛЬНАЯ ОШИБКА: Не удалось создать/загрузить файл коллекции", e);
+            logger.log(Level.SEVERE, "Подробности: {0}", e.getMessage());
+            logger.log(Level.SEVERE, "Сервер будет остановлен");
             System.exit(1);
         }
 
+        // Обработка загруженной коллекции
         for (City city : map.values()) {
             IdCounter.setId(max(city.getId(), IdCounter.getId()));
-            setOfId.add( city.getId());
+            setOfId.add(city.getId());
         }
 
-        if (setOfId.size() < map.size()) {
+        if (!map.isEmpty() && setOfId.size() < map.size()) {
             logger.log(Level.WARNING, "Обнаружены дубликаты ID - коллекция очищена");
             map.clear();
             IdCounter.setId(0);

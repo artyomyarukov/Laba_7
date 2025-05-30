@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 
 public class City extends Element implements Serializable {
-    private Integer id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
+    private Long id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
     private String name; //Поле не может быть null, Строка не может быть пустой
     private Coordinates coordinates; //Поле не может быть null
     private java.time.LocalDateTime creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
@@ -43,7 +43,7 @@ public class City extends Element implements Serializable {
      * @param governor губернатор города (может быть null)
      */
 
-    public City(Integer id, String name, Coordinates coordinates, LocalDateTime creationDate, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
+    public City(Long id, String name, Coordinates coordinates, LocalDateTime creationDate, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
         this.id = id;
         this.name = name;
         this.coordinates = coordinates;
@@ -72,7 +72,7 @@ public class City extends Element implements Serializable {
      * @param governor губернатор города
      */
 
-    public City(Integer id, String name, Coordinates coordinates, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
+    public City(Long id, String name, Coordinates coordinates, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
         this(id, name, coordinates, LocalDateTime.now(), area, population, metersAboveSeaLevel, telephoneCode, agglomeration, government, governor);
     }
 
@@ -81,7 +81,7 @@ public class City extends Element implements Serializable {
      * @return идентификатор города
      */
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
@@ -90,7 +90,7 @@ public class City extends Element implements Serializable {
      * @param id новый идентификатор (не null, >0)
      */
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -286,7 +286,7 @@ public class City extends Element implements Serializable {
     }
 
     public static class Builder {
-        private Integer id;
+        private Long id;
         private String name;
         private Coordinates coordinates;
         private LocalDateTime creationDate = LocalDateTime.now();
@@ -300,7 +300,7 @@ public class City extends Element implements Serializable {
 
         public Builder() {}
 
-        public Builder setId(Integer id) {
+        public Builder setId(Long id) {
             if (id == null || id <= 0) {
                 throw new IllegalArgumentException("ID должен быть положительным числом");
             }

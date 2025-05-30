@@ -6,12 +6,12 @@ import common.utility.ExecutionResponse;
 import server.collection.CityService;
 
 /**
- * Команда 'print_descending'. Выводит элементы коллекции в порядке убывания.
+ * Команда 'print_ascending'. Выводит элементы коллекции в порядке убывания.
  */
-public class PrintDescending extends Command {
+public class PrintAscending extends Command {
     CityService cityService;
 
-    public PrintDescending(CityService cityService) {
+    public PrintAscending(CityService cityService) {
         super(CommandDefinition.print_ascending, "вывести элементы коллекции в порядке возрастания");
         this.cityService = cityService;
     }

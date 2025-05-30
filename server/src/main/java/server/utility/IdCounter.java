@@ -5,7 +5,7 @@ public class IdCounter {
     public static void setId(long id){
         idCounter = id;
     }
-    public static int getNextId(){
+    public static long getNextId(){
         idCounter++;
         return idCounter;
     }

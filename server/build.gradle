@@ -1,7 +1,40 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
+repositories {
+    mavenCentral() // Основной репозиторий Maven
+}
 dependencies {
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    implementation 'org.slf4j:slf4j-api:2.0.7'
     implementation project(':common')
+
+    // Реализация логгера (выберите одну)
+    implementation 'ch.qos.logback:logback-classic:1.4.7'
+    implementation 'com.thoughtworks.xstream:xstream:1.4.20'  // Основная библиотека XStream
+    implementation 'xmlpull:xmlpull:1.1.3.1'
+    // Дополнительная зависимость для работы с XML
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8' // Устанавливаем кодировку для компиляции
+}
+
+tasks.withType(JavaExec) {
+    systemProperty "file.encoding", "UTF-8"
+    jvmArgs "-Dfile.encoding=UTF-8"
+}
+
+applicationDefaultJvmArgs = [
+        "-Dfile.encoding=UTF-8",
+        "-Dsun.jnu.encoding=UTF-8"
+]
+
+application {
+    mainClass = 'Server'  // Замените на ваш главный класс
 }

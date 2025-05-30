@@ -130,7 +130,7 @@ public class CityService {
 
     public void updateById(Long id, City city) {
         String key = getKeyById(id);
-        city.setId(Math.toIntExact(id));
+        city.setId(id);
         storage.put(key, city);
     }
     public String sortedByAreaCollection() {
