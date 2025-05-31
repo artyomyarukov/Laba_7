@@ -20,6 +20,6 @@ public class Info extends Command {
 
     @Override
     public ExecutionResponse execute() {
-        return new ExecutionResponse("Это LabWorkCollection, текущий размер: " + cityService.getCollectionSize() + ", состоит из элементов типа: " + City.class + "\n");
+        return new ExecutionResponse("Это CityCollection, текущий размер: " + cityService.getCollectionSize() + ", состоит из элементов типа: " + City.class + "\n");
     }
 }

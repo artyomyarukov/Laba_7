@@ -3,6 +3,7 @@ import common.collection.City;
 import lombok.Data;
 
 
+import java.util.HashMap;
 import java.util.Hashtable;
 
 /*Класс хранилеще для получения элемента коллеккции по id и
@@ -11,14 +12,14 @@ import java.util.Hashtable;
 
 @Data
 public class Storage {
-    private final Hashtable<String, City> map;
+    private final HashMap<String, City> map;
 
-    public Storage(Hashtable<String, City> map) {
+    public Storage(HashMap<String, City> map) {
         this.map = map;
     }
 
     public Storage() {
-        this.map = new Hashtable<>();
+        this.map = new HashMap<>();
     }
 
 

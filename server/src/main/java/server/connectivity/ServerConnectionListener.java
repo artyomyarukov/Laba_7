@@ -6,40 +6,49 @@ import common.utility.SerializationUtils;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.util.logging.Logger;
 
 /**
  * Принимает UDP-сообщения от клиентов (неблокирующий режим)
  */
-@Slf4j
+
 public class ServerConnectionListener {
-    private final DatagramSocket socket;
+    private static final Logger logger = Logger.getLogger(ServerConnectionListener.class.getName());
+    private final DatagramChannel channel;
     private final int bufferSize;
 
     public ServerConnectionListener(int port, int bufferSize) throws IOException {
-        this.socket = new DatagramSocket(port);
+        this.channel = DatagramChannel.open();
+        channel.configureBlocking(false);
+        channel.bind(new InetSocketAddress(port));
         this.bufferSize = bufferSize;
-        log.info("Сервер запущен на порту {}", port);
-
-
+        logger.info("Серверный канал инициализирован на порту " + port);
     }
 
     public IncomingMessage receiveMessage() throws IOException {
-        byte[] buffer = new byte[bufferSize];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+        ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+        InetSocketAddress clientAddress = (InetSocketAddress) channel.receive(buffer);
 
-        log.debug("Ожидание сообщения...");
-        socket.receive(packet); // Блокирующий прием (можно заменить на NIO)
-
-        Object data = SerializationUtils.deserialize(packet.getData());
-        log.info("Получено сообщение от {}:{}", packet.getAddress(), packet.getPort());
-
-        return new IncomingMessage(data, packet.getAddress(), packet.getPort());
+        if (clientAddress != null) {
+            buffer.flip();
+            byte[] data = new byte[buffer.remaining()];
+            buffer.get(data);
+            return new IncomingMessage(data, clientAddress.getAddress(), clientAddress.getPort());
+        }
+        return null;
+    }
+    public DatagramChannel getChannel() {
+        return channel;
     }
 
-    public void close() {
-        socket.close();
-        log.info("Серверный сокет закрыт");
+    public void close() throws IOException {
+        channel.close();
+        logger.info("Серверный канал закрыт");
     }
+
 }
 
 

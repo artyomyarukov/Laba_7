@@ -1,11 +1,22 @@
 package server;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.logging.Level;
 
 
 public final class Server {
-    private static final Logger logger = LoggerFactory.getLogger(Server.class);
+    private static final Logger logger =Logger.getLogger(Server.class.getName());
+    static {
+        // Настройка формата вывода логов
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "%4$s: %5$s %n");
+        System.setProperty("file.encoding", "UTF-8");
+
+    }
 
     private Server() {
         throw new UnsupportedOperationException("This is an utility class and can not be instantiated");
@@ -13,7 +24,7 @@ public final class Server {
 
     public static void main(String[] args){
         if (args.length != 2) {
-            logger.error("РџСЂРѕРіСЂР°РјРјР° РґРѕР»Р¶РЅР° Р·Р°РїСѓСЃРєР°С‚СЊСЃСЏ СЃ РґРІСѓРјСЏ Р°СЂРіСѓРјРµРЅС‚Р°РјРё: С„Р°Р№Р» СЃ РєРѕР»Р»РµРєС†РёРµР№ Рё СЃРµСЂРІРµСЂРЅС‹Р№ РїРѕСЂС‚");
+            logger.log(Level.INFO, "Получена команда на завершение работы");
             System.exit(1);
         }
         String strPort = args[1];
@@ -21,7 +32,7 @@ public final class Server {
         try {
             port = Integer.parseInt(strPort);
         } catch (NumberFormatException e) {
-            logger.error("РћС€РёР±РєР°, РЅРµ СЂР°СЃРїРѕР·РЅР°РЅ РїРѕСЂС‚: ", e);
+            logger.log(Level.WARNING,"Ожидается ввод : файл:сервер");
             System.exit(1);
         }
         ServerApplication app = new ServerApplication(args[0], port);

@@ -11,14 +11,12 @@ import server.commands.CommandRegistry;
 import server.commands.History;
 
 
+
+
 @AllArgsConstructor
 public class CommandController {
     private final CommandRegistry commandRegistry;
-    /**   private final static Map<HandlerKey, Function> handlerMap = new HashMap();
-     static {
-     handlerMap.put(new HandlerKey(false, false), AbstractCommand::execute);
-     }
-     */
+
     public ExecutionResponse handle(CommandRequest request) {
         CommandWithArgument commandWithArgument = request.getCommandWithArgument();
         CommandDefinition commandDefinition = commandWithArgument.getCommandDefinition();

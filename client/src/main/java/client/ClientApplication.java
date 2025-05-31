@@ -25,9 +25,14 @@ public class ClientApplication {
         this.port = port;
     }
 
-    public void start() {
+    public void start() throws IllegalAccessException {
         client.ClientConnector clientConnector = new client.ClientConnector(ip, port);
-        commandDefinitions = clientConnector.sendHello();
+      try {
+          commandDefinitions = clientConnector.sendHello();
+      }
+      catch (IllegalAccessException e) {
+          logger.error("Ошибка: ", e);
+      }
 
         try (AbstractInput input = new ConsoleInput()) {
             ClientInputProcessor inputProcessor = new ClientInputProcessor(commandDefinitions, clientConnector);

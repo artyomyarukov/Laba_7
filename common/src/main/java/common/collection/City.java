@@ -30,7 +30,7 @@ public class City extends Element implements Serializable {
 
     /**
      * Основной конструктор для создания объекта City.
-     * @param id уникальный идентификатор города (не null, >0)
+     * @
      * @param name название города (не null, не пустое)
      * @param coordinates координаты города (не null)
      * @param creationDate дата создания записи (не null)
@@ -42,9 +42,23 @@ public class City extends Element implements Serializable {
      * @param government форма правления (не null)
      * @param governor губернатор города (может быть null)
      */
+    public City(Long id,String name, Coordinates coordinates, LocalDateTime creationDate, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
+        this.id =id;
+        this.name = name;
+        this.coordinates = coordinates;
+        this.creationDate = creationDate;
+        this.area = area;
+        this.population = population;
+        this.metersAboveSeaLevel = metersAboveSeaLevel;
+        this.telephoneCode = telephoneCode;
+        this.agglomeration = agglomeration;
+        this.government = government;
+        this.governor = governor;
+    }
 
-    public City(Long id, String name, Coordinates coordinates, LocalDateTime creationDate, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
-        this.id = id;
+
+    public City(String name, Coordinates coordinates, LocalDateTime creationDate, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
+        this.id =0L;
         this.name = name;
         this.coordinates = coordinates;
         this.creationDate = creationDate;
@@ -60,7 +74,7 @@ public class City extends Element implements Serializable {
     /**
      * Альтернативный конструктор, автоматически устанавливающий текущую дату создания.
      *
-     * @param id уникальный идентификатор города
+     *
      * @param name название города
      * @param coordinates координаты города
      * @param area площадь города
@@ -72,8 +86,8 @@ public class City extends Element implements Serializable {
      * @param governor губернатор города
      */
 
-    public City(Long id, String name, Coordinates coordinates, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
-        this(id, name, coordinates, LocalDateTime.now(), area, population, metersAboveSeaLevel, telephoneCode, agglomeration, government, governor);
+    public City( String name, Coordinates coordinates, Long area, int population, Integer metersAboveSeaLevel, Long telephoneCode, long agglomeration, Government government, Human governor) {
+        this( name, coordinates, LocalDateTime.now(), area, population, metersAboveSeaLevel, telephoneCode, agglomeration, government, governor);
     }
 
     /**
@@ -273,7 +287,7 @@ public class City extends Element implements Serializable {
 
     @Override
     public boolean validate() {
-        if (id == null || id <= 0) return false;
+
         if (name == null || name.isEmpty()) return false;
         if (coordinates == null || !coordinates.validate()) return false;
         if (creationDate == null) return false;
@@ -286,7 +300,7 @@ public class City extends Element implements Serializable {
     }
 
     public static class Builder {
-        private Long id;
+
         private String name;
         private Coordinates coordinates;
         private LocalDateTime creationDate = LocalDateTime.now();
@@ -300,13 +314,6 @@ public class City extends Element implements Serializable {
 
         public Builder() {}
 
-        public Builder setId(Long id) {
-            if (id == null || id <= 0) {
-                throw new IllegalArgumentException("ID должен быть положительным числом");
-            }
-            this.id = id;
-            return this;
-        }
 
         public Builder setName(String name) {
             if (name == null || name.trim().isEmpty()) {
@@ -324,6 +331,9 @@ public class City extends Element implements Serializable {
             if (x == null) {
                 throw new IllegalArgumentException("Координата X не может быть null");
             }
+            if (this.coordinates == null) {
+                this.coordinates = new Coordinates(null, 0f);  // Инициализация
+            }
             this.coordinates.setX(x);
             return this;
         }
@@ -335,9 +345,13 @@ public class City extends Element implements Serializable {
             if (y > 986) {
                 throw new IllegalArgumentException("Координата Y должна быть ≤ 986");
             }
+            if (this.coordinates == null) {
+                this.coordinates = new Coordinates(0f, null);  // Инициализация
+            }
             this.coordinates.setY(y);
             return this;
         }
+
 
         // Альтернативный метод для установки сразу обеих координат
         public Builder setCoordinates(Float x, Float y) {
@@ -402,14 +416,14 @@ public class City extends Element implements Serializable {
 
         public City build() {
             // Проверка обязательных полей
-            if (id == null) throw new IllegalStateException("ID не установлен");
+
             if (name == null) throw new IllegalStateException("Название не установлено");
             if (coordinates == null) throw new IllegalStateException("Координаты не установлены");
             if (area == null) throw new IllegalStateException("Площадь не установлена");
             if (government == null) throw new IllegalStateException("Форма правления не установлена");
 
             return new City(
-                    id,
+
                     name,
                     coordinates,
                     creationDate,

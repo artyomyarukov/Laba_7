@@ -20,7 +20,7 @@ public class AddIfMax extends Command {
      */
 
     public AddIfMax(CityService cityService, CommandDefinition comandDefinition) {
-        super(CommandDefinition.add, "добавить новый элемент в коллекцию, если он больше максимального");
+        super(CommandDefinition.add_if_max, "добавить новый элемент в коллекцию, если он больше максимального");
         this.cityService = cityService;
         this.comandDefinition = comandDefinition;
     }

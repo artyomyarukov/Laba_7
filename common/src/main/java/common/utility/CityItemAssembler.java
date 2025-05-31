@@ -23,7 +23,7 @@ public class CityItemAssembler {
 
     static {
         allPrompts.add("Введите название города (не может быть пустым)");
-        allPrompts.add("Введите координату X (целое число, не null)");
+        allPrompts.add("Введите координату X (float, не null)");
         allPrompts.add("Введите координату Y (float, не null, макс. 986)");
         allPrompts.add("Введите площадь города (дробное число > 0)");
         allPrompts.add("Введите население (целое число > 0)");

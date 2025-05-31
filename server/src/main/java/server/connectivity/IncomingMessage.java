@@ -7,7 +7,7 @@ import java.net.InetAddress;
 @AllArgsConstructor
 @Data
 public class IncomingMessage {
-    private final Object message;
+    private final byte[] data;
     private final InetAddress clientIp;
     private final int clientPort;
 }

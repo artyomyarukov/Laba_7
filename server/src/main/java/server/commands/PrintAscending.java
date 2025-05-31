@@ -16,7 +16,8 @@ public class PrintAscending extends Command {
         this.cityService = cityService;
     }
     @Override
-    public ExecutionResponse execute(String arg) {
+    public ExecutionResponse execute() {
+
         return new ExecutionResponse(cityService.sortedByAreaCollection());
     }
 }

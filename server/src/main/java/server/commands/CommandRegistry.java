@@ -29,12 +29,13 @@ public class CommandRegistry {
         commands.put(CommandDefinition.save, new Save(cityService));
         commands.put(CommandDefinition.remove_key, new RemoveById(cityService));
         commands.put(CommandDefinition.update_id, new Update(cityService));
-        commands.put(CommandDefinition.print_ascending, new PrintDescending(cityService));
+        commands.put(CommandDefinition.print_ascending, new PrintAscending(cityService));
         commands.put(CommandDefinition.remove_greater, new RemoveGreater(cityService));
         commands.put(CommandDefinition.add_if_max, new AddIfMax(cityService, CommandDefinition.add_if_max));
         commands.put(CommandDefinition.help, new Help(this));
         commands.put(CommandDefinition.group_counting_by_population, new GroupCounting(cityService));
         commands.put(CommandDefinition.info, new Info(cityService));
+        commands.put(CommandDefinition.sum_of_meters_above_sea_level, new SumOfMeters(cityService));
         commands.put(CommandDefinition.clear, new Clear(cityService));
         commands.put(CommandDefinition.execute_script, new ExecuteScript(cityService));
         commands.put(CommandDefinition.history, new History(historyProvider));

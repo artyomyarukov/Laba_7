@@ -15,7 +15,7 @@ public class Show extends Command {
 
     public Show(CityService cityService) {
         super(CommandDefinition.show, "вывести в стандартный поток вывода все элементы коллекции в строковом представлении");
-        this.cityService = this.cityService;
+        this.cityService = cityService;
     }
 
     @Override

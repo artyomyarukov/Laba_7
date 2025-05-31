@@ -11,6 +11,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import server.ServerApplication;
 
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -36,15 +37,14 @@ public class XMLReader {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-    public Hashtable<String, City> loadFromXML(String filename) throws IOException {
-        Hashtable<String, City> map = new Hashtable<>();
+    public HashMap<String, City> loadFromXML(String filename) throws IOException {
+        HashMap<String, City> map = new HashMap<>();
         File file = new File(filename);
 
-        // Если файл не существует, создаем новый пустой файл
         if (!file.exists()) {
             createEmptyXMLFile(file);
-            logger.log(Level.INFO, "Файл не существует будет создан новый");
-            return map; // Возвращаем пустую коллекцию
+            logger.log(Level.INFO, "Файл не существует, создан новый");
+            return map;
         }
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -54,22 +54,26 @@ public class XMLReader {
             Document document = builder.parse(file);
             document.getDocumentElement().normalize();
 
-            NodeList entryList = document.getElementsByTagName("entry");
+            // Получаем все элементы city__key
+            NodeList cityKeyList = document.getElementsByTagName("city__key");
 
-            for (int i = 0; i < entryList.getLength(); i++) {
-                Node entryNode = entryList.item(i);
-                if (entryNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element entryElement = (Element) entryNode;
+            for (int i = 0; i < cityKeyList.getLength(); i++) {
+                Node cityKeyNode = cityKeyList.item(i);
+                if (cityKeyNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element cityKeyElement = (Element) cityKeyNode;
 
-                    String key = getElementText(entryElement, "сity_key");
-                    if (key == null || key.isEmpty()) {
-                        System.err.println("Элемент entry без ключа, пропускаем");
+                    // Получаем ключ (значение внутри <string>)
+                    NodeList stringNodes = cityKeyElement.getElementsByTagName("string");
+                    if (stringNodes.getLength() == 0) {
+                        System.err.println("Элемент city__key без string, пропускаем");
                         continue;
                     }
+                    String key = stringNodes.item(0).getTextContent();
 
-                    NodeList cityNodes = entryElement.getElementsByTagName("city_elem");
+                    // Получаем элемент города
+                    NodeList cityNodes = cityKeyElement.getElementsByTagName("city__elem");
                     if (cityNodes.getLength() == 0) {
-                        System.err.println("Entry без city_elem, пропускаем");
+                        System.err.println("city__key без city__elem, пропускаем");
                         continue;
                     }
 
@@ -86,6 +90,11 @@ public class XMLReader {
         } catch (ParserConfigurationException | SAXException e) {
             throw new IOException("Ошибка чтения XML файла: " + filename, e);
         }
+
+        if (map.isEmpty()) {
+            logger.log(Level.WARNING, "Файл существует, но не содержит валидных данных");
+        }
+
         return map;
     }
 
@@ -94,15 +103,21 @@ public class XMLReader {
      */
     private void createEmptyXMLFile(File file) throws IOException {
         try {
+            // Проверяем и создаем родительские директории
+            File parentDir = file.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                if (!parentDir.mkdirs()) {
+                    throw new IOException("Не удалось создать директории для файла: " + file.getAbsolutePath());
+                }
+            }
+
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 
-            // Создаем новый документ
             Document doc = docBuilder.newDocument();
             Element rootElement = doc.createElement("cities");
             doc.appendChild(rootElement);
 
-            // Записываем содержимое в файл
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -111,13 +126,10 @@ public class XMLReader {
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(file);
 
-            // Создаем родительские директории, если нужно
-            file.getParentFile().mkdirs();
             transformer.transform(source, result);
-
-            System.out.println("Создан новый пустой XML файл: " + file.getAbsolutePath());
+            logger.log(Level.INFO, "Создан новый XML файл: {0}", file.getAbsolutePath());
         } catch (Exception e) {
-            throw new IOException("Ошибка при создании нового XML файла", e);
+            throw new IOException("Ошибка при создании XML файла: " + e.getMessage(), e);
         }
     }
 

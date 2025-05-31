@@ -37,72 +37,51 @@ public class ClientConnector {
         this.ip = ip;
         this.port = port;
     }
-
-
     private Object sendData(Object obj) {
-        int retryCount = RETRY_COUNT;
-        while (retryCount > 0) {
-            retryCount--;
+        int attempts = 0;
+        long startTime = System.currentTimeMillis();
+
+        while (attempts < RETRY_COUNT) {
             try (DatagramChannel clientChannel = DatagramChannel.open()) {
-                clientChannel.configureBlocking(false);
-
+                // 1. Отправка данных
                 byte[] data = INSTANCE.serialize(obj);
-                ByteBuffer buffer = ByteBuffer.wrap(data);
+                clientChannel.send(ByteBuffer.wrap(data), serverAddress);
 
-                clientChannel.send(buffer, serverAddress);
-                logger.debug("Р”Р°РЅРЅС‹Рµ РѕС‚РїСЂР°РІР»РµРЅС‹ СЃРµСЂРІРµСЂСѓ: " + obj);
+                // 2. Ожидание ответа
+                ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+                InetSocketAddress sourceAddress = waitForResponse(clientChannel, buffer);
 
-                ByteBuffer receiveBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-                InetSocketAddress sourceAddress = waitForResponse(clientChannel, receiveBuffer);
                 if (sourceAddress != null) {
-                    //receiveBuffer.flip();
-                    Object response = INSTANCE.deserialize(receiveBuffer.array());
-                    long expectedChunksSize;
-                    List<byte[]> chunks = new ArrayList<>();
-                    if (response instanceof SerializationUtils.ChunksCountWithCRC) {
-                        SerializationUtils.ChunksCountWithCRC chunksCountWithCRC = (SerializationUtils.ChunksCountWithCRC) response;
-                        expectedChunksSize = chunksCountWithCRC.getChunksCount();
-                        logger.debug("РћС‚РІРµС‚ РѕС‚ СЃРµСЂРІРµСЂР°, РѕР¶РёРґР°РµС‚СЃСЏ РєРѕР»РёС‡РµСЃС‚РІРѕ С‡Р°РЅРєРѕРІ: " + expectedChunksSize);
-                        for (int i = 1; i <= expectedChunksSize; i++) {
-                            receiveBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-                            receiveBuffer.clear();
-                            sourceAddress = waitForResponse(clientChannel, receiveBuffer);
-                            if (sourceAddress != null) {
-                                chunks.add(INSTANCE.copy(receiveBuffer.array(), receiveBuffer.position()));
-                                logger.debug("РћС‚РІРµС‚ РѕС‚ СЃРµСЂРІРµСЂР°, РїРѕР»СѓС‡РµРЅ С‡Р°РЅРє: " + i);
-                            }
-                        }
-                        if (expectedChunksSize == chunks.size()) {
-                            response = INSTANCE.deserializeFromChunks(chunks, chunksCountWithCRC.getCrc());
-                            if (expectedChunksSize == 1) {
-                                logger.debug("РћС‚РІРµС‚ РѕС‚ СЃРµСЂРІРµСЂР°: " + response);
-                            }
-                            else {
-                                logger.debug("РћС‚РІРµС‚ РѕС‚ СЃРµСЂРІРµСЂР°: РёС‚РѕРіРѕ РїРѕР»СѓС‡РµРЅРѕ С‡Р°РЅРєРѕРІ " + expectedChunksSize);
-                            }
-                            return response;
-                        }
-                        else {
-                            logger.error("РћР¶РёРґР°Р»РѕСЃСЊ " + expectedChunksSize +  " С‡Р°РЅРєРѕРІ, Р° РїСЂРёС€Р»Рѕ: " + chunks.size());
-                            continue;
-                        }
-                    }
-                    else {
-                        logger.error("РћР¶РёРґР°Р»РѕСЃСЊ РєРѕР»РёС‡РµСЃС‚РІРѕ С‡Р°РЅРєРѕРІ, Р° РїСЂРёС€Р»Рѕ РґСЂСѓРіРѕРµ: " + response);
-                    }
-                    return response;
-                } else {
-                    if (retryCount > 0) {
-                        logger.warn("РЎРµСЂРІРµСЂ РЅРµ РѕС‚РІРµС‚РёР», РїРѕРІС‚РѕСЂСЏСЋ РїРѕРїС‹С‚РєСѓ РѕС‚РїСЂР°РІРёС‚СЊ, РїРѕРїС‹С‚РєР°: " + (RETRY_COUNT - retryCount + 1) + " РёР· " + RETRY_COUNT);
-                    }
+                    return INSTANCE.deserialize(buffer.array());
                 }
 
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (IOException e) {
+                attempts++;
+                logger.info("Попытка {}/{} не удалась: {}", attempts, RETRY_COUNT, e.getMessage());
+
+                // 3. Проверка общего времени
+                if (System.currentTimeMillis() - startTime > WAIT_TIMEOUT) {
+                    break;
+                }
+
+                // 4. Пауза перед повторной попыткой
+                try {
+                    Thread.sleep(INTER_WAIT_SLEEP_TIMEOUT * attempts); // Экспоненциальная задержка
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+                continue;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
-        throw new IllegalArgumentException("РЎРµСЂРІРµСЂ РЅРµРґРѕСЃС‚СѓРїРµРЅ");
+
+        throw new IllegalStateException("Сервер недоступен после " + attempts + " попыток");
     }
+
+
+
 
     private static InetSocketAddress waitForResponse(DatagramChannel clientChannel, ByteBuffer receiveBuffer) throws IOException, InterruptedException {
         long startTime = System.currentTimeMillis();
@@ -121,20 +100,20 @@ public class ClientConnector {
         return sourceAddress;
     }
 
-    public Collection<CommandDefinition> sendHello() {
+    public Collection<CommandDefinition> sendHello() throws IllegalAccessException {
         Object commandDefinitions = sendData(CLIENT_ID);
         if (commandDefinitions instanceof Collection) {
             return (Collection<CommandDefinition>) commandDefinitions;
         }
-        throw new IllegalArgumentException("РќРµРІРµСЂРЅС‹Р№ РѕС‚РІРµС‚ РѕС‚ СЃРµСЂРІРµСЂР° РЅР° РєРѕРјР°РЅРґСѓ РїСЂРёРІРµС‚СЃС‚РІРёСЏ: " + commandDefinitions);
+        throw new IllegalArgumentException("Неверный ответ от сервера на команду приветствия: " + commandDefinitions);
     }
 
-    public ExecutionResponse sendCommand(CommandRequest commandRequest) {
+    public ExecutionResponse sendCommand(CommandRequest commandRequest) throws IllegalAccessException {
         Object commandResponse = sendData(commandRequest);
         if (commandResponse instanceof ExecutionResponse) {
             return (ExecutionResponse) commandResponse;
         }
-        throw new IllegalArgumentException("РќРµРІРµСЂРЅС‹Р№ РѕС‚РІРµС‚ РѕС‚ СЃРµСЂРІРµСЂР° РЅР° РєРѕРјР°РЅРґСѓ: " + commandResponse);
+        throw new IllegalArgumentException("Неверный ответ от сервера на команду: " + commandResponse);
     }
 
 

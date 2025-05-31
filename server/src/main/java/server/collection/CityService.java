@@ -5,10 +5,8 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 import com.thoughtworks.xstream.security.AnyTypePermission;
 import common.collection.City;
 import lombok.AllArgsConstructor;
-import java.util.Comparator;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -19,7 +17,7 @@ public class CityService {
     private Storage storage;
     private final String filename;
 
-    public CityService(Hashtable<String, City> initialState, String filename) {
+    public CityService(HashMap<String, City> initialState, String filename) {
         this.storage = new Storage(initialState);
         this.filename = filename;
     }
@@ -63,7 +61,7 @@ public class CityService {
 
         // 3 Настраиваем алиасы для красивых имен тегов
         xstream.alias("storage", Map.class);       // Основной тег
-        xstream.alias("сity_key", Map.Entry.class);   // Элементы коллекции
+        xstream.alias("city_key", Map.Entry.class);   // Элементы коллекции
         xstream.alias("city_elem", City.class);   // Объекты значений
 
         // 4 Преобразуем Map в XML
@@ -134,11 +132,9 @@ public class CityService {
         storage.put(key, city);
     }
     public String sortedByAreaCollection() {
-        return storage.getMap().entrySet().stream()
-                .map(entry -> new CityEntry(entry.getKey(), entry.getValue()))
-                .sorted()
-
-                .map(labWorkEntry -> labWorkEntry.key + " = " + labWorkEntry.city)
+         return storage.getMap().values().stream()
+                .sorted(Comparator.comparingDouble(City::getArea))  // Сортировка по площади
+                .map(city -> city.getName() + " (население: " + city.getArea() + ")")
                 .collect(Collectors.joining("\n"));
     }
 

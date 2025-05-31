@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Приём и первичная проверка запроса
+ */
 
 public class RequestHandler implements IHistoryProvider {
     private static final Logger logger = LoggerFactory.getLogger(RequestHandler.class);

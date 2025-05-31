@@ -1,5 +1,4 @@
 package client.client_command;
-;
 import client.ClientInputProcessor;
 
 import client.input.AbstractInput;

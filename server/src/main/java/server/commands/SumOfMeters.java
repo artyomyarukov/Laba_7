@@ -12,6 +12,7 @@ public class SumOfMeters extends Command {
     CityService cityService;
     public SumOfMeters(CityService cityService) {
         super(CommandDefinition.sum_of_meters_above_sea_level, "Выводит сумму значений высот над уровнем моря городов ");
+        this.cityService = cityService;
     }
 
     @Override

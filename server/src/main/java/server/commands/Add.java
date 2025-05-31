@@ -4,8 +4,10 @@ import common.collection.City;
 import common.commands.Command;
 import common.commands.CommandDefinition;
 import common.utility.ExecutionResponse;
+
 import server.collection.CityService;
 import server.utility.IdCounter;
+
 
 /**
  * Команда 'add'. Добавляет новый элемент в коллекцию.
@@ -30,9 +32,10 @@ public class Add extends Command {
      */
     @Override
     public ExecutionResponse execute(String key, City element) {
+
         element.setId(IdCounter.getNextId());
         String warning = cityService.put(key, element);
-        return new ExecutionResponse(warning == null ? "" : warning);
+        return new ExecutionResponse(warning == null ? "Город добавлен" : warning);
 
     }
 }
