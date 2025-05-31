@@ -11,110 +11,167 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.ArrayList;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
-import java.util.List;
-
-import static common.utility.SerializationUtils.BUFFER_SIZE;
-import static common.utility.SerializationUtils.INSTANCE;
-import static client.ClientApplication.CLIENT_ID;
-
+import java.util.concurrent.TimeUnit;
 
 @AllArgsConstructor
 public class ClientConnector {
-    private static final Logger logger = LoggerFactory.getLogger(ClientConnector.class);
-    public static final int INTER_WAIT_SLEEP_TIMEOUT = 50;
-    private final InetAddress ip;
-    private final int port;
-    private static final int RETRY_COUNT = 10;
-    private static final int WAIT_TIMEOUT = 1000 * 1000;
-    InetSocketAddress serverAddress;
+    private static final Logger log = LoggerFactory.getLogger(ClientConnector.class);
+    private static final int MAX_RETRIES = 3;
+    private static final int RESPONSE_TIMEOUT_MS = 200;
+    private static final int RETRY_DELAY_MS = 500;
+    private static final int BUFFER_SIZE = 65536;
 
+    private final InetSocketAddress serverAddress;
     public ClientConnector(InetAddress ip, int port) {
-        serverAddress = new InetSocketAddress(ip, port);
-        this.ip = ip;
-        this.port = port;
+        this.serverAddress = new InetSocketAddress(ip, port);
+        log.info("Создан коннектор к серверу {}:{}", ip.getHostAddress(), port);
     }
-    private Object sendData(Object obj) {
-        int attempts = 0;
-        long startTime = System.currentTimeMillis();
 
-        while (attempts < RETRY_COUNT) {
-            try (DatagramChannel clientChannel = DatagramChannel.open()) {
-                // 1. �������� ������
-                byte[] data = INSTANCE.serialize(obj);
-                clientChannel.send(ByteBuffer.wrap(data), serverAddress);
 
-                // 2. �������� ������
-                ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-                InetSocketAddress sourceAddress = waitForResponse(clientChannel, buffer);
 
-                if (sourceAddress != null) {
-                    return INSTANCE.deserialize(buffer.array());
-                }
 
+    public ExecutionResponse sendCommand(CommandRequest request) throws ServerUnavailableException {
+        log.debug("Отправка команды: {}", request);
+        try {
+            Object response = sendDataWithRetry(request);
+            if (response instanceof ExecutionResponse) {
+                return (ExecutionResponse) response;
+            }
+            throw new ServerUnavailableException("Неверный формат ответа сервера");
+        } catch (ClassCastException e) {
+            throw new ServerUnavailableException("Ошибка приведения типа ответа", e);
+        }
+    }
+
+
+
+    private Object sendDataWithRetry(Object data) throws ServerUnavailableException {
+        int attempt = 0;
+        IOException lastException = null;
+
+        System.out.println("=== Попытка подключения ===");
+
+        while (attempt < MAX_RETRIES) {
+            attempt++;
+            try {
+                System.out.printf("Попытка %d из %d...%n", attempt, MAX_RETRIES);
+                Object result = sendData(data);
+                System.out.println("Успешное подключение!");
+                return result;
+            } catch (SocketTimeoutException e) {
+                lastException = e;
+                System.err.printf("Таймаут! (попытка %d) Сервер не ответил за %d мс%n",
+                        attempt, RESPONSE_TIMEOUT_MS);
             } catch (IOException e) {
-                attempts++;
-                logger.info("������� {}/{} �� �������: {}", attempts, RETRY_COUNT, e.getMessage());
+                lastException = e;
+                System.err.printf("Ошибка сети: %s (попытка %d)%n",
+                        e.getMessage(), attempt);
+            }
 
-                // 3. �������� ������ �������
-                if (System.currentTimeMillis() - startTime > WAIT_TIMEOUT) {
-                    break;
-                }
-
-                // 4. ����� ����� ��������� ��������
+            if (attempt < MAX_RETRIES) {
                 try {
-                    Thread.sleep(INTER_WAIT_SLEEP_TIMEOUT * attempts); // ���������������� ��������
+                    System.out.printf("Пауза %d мс перед повторной попыткой...%n", RETRY_DELAY_MS);
+                    TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    break;
+                    System.err.println("Операция прервана пользователем!");
+                    throw new ServerUnavailableException("Операция прервана");
                 }
-                continue;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
         }
 
-        throw new IllegalStateException("������ ���������� ����� " + attempts + " �������");
+        String errorMsg = String.format("Сервер %s недоступен после %d попыток",
+                serverAddress, MAX_RETRIES);
+        System.err.println(errorMsg);
+        throw new ServerUnavailableException(errorMsg, lastException);
+    }
+    private Object sendData(Object data) throws IOException {
+        DatagramChannel channel = DatagramChannel.open();
+        try {
+            channel.configureBlocking(false); // Неблокирующий режим!
+            channel.socket().setSoTimeout(RESPONSE_TIMEOUT_MS);
+
+            log.debug("Отправка данных на сервер...");
+            byte[] bytes = SerializationUtils.INSTANCE.serialize(data);
+            channel.send(ByteBuffer.wrap(bytes), serverAddress);
+
+            log.debug("Ожидание ответа (таймаут {} мс)...", RESPONSE_TIMEOUT_MS);
+            System.out.println("Ожидаю ответ от сервера...");
+
+            ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+            long startTime = System.currentTimeMillis();
+
+            while (System.currentTimeMillis() - startTime < RESPONSE_TIMEOUT_MS) {
+                InetSocketAddress responseAddress = (InetSocketAddress) channel.receive(buffer);
+                if (responseAddress != null) {
+                    System.out.println("Ответ получен!");
+                    buffer.flip();
+                    return SerializationUtils.INSTANCE.deserialize(buffer.array());
+                }
+                // Короткая пауза для снижения нагрузки на CPU
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Операция прервана");
+                }
+            }
+            throw new SocketTimeoutException("Сервер не ответил в течение " + RESPONSE_TIMEOUT_MS + " мс");
+        } finally {
+            channel.close();
+        }
     }
 
+    public Collection<CommandDefinition> sendHello() throws ServerUnavailableException {
+        System.out.println("=== Попытка подключения ===");
 
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            System.out.printf("Попытка %d из %d%n", attempt, MAX_RETRIES);
 
-
-    private static InetSocketAddress waitForResponse(DatagramChannel clientChannel, ByteBuffer receiveBuffer) throws IOException, InterruptedException {
-        long startTime = System.currentTimeMillis();
-        InetSocketAddress sourceAddress = null;
-
-        while ((System.currentTimeMillis() - startTime) < WAIT_TIMEOUT) {
-            receiveBuffer.clear();
-            sourceAddress = (InetSocketAddress) clientChannel.receive(receiveBuffer);
-
-            if (sourceAddress != null) {
-                break;
+            try {
+                Object response = sendData(ClientApplication.CLIENT_ID);
+                if (response instanceof Collection) {
+                    System.out.println("Подключение успешно установлено!");
+                    return (Collection<CommandDefinition>) response;
+                }
+                log.error("Неверный формат ответа сервера");
+            } catch (SocketTimeoutException e) {
+                System.err.println("Таймаут: " + e.getMessage());
+                log.warn("Таймаут подключения (попытка {}): {}", attempt, e.getMessage());
+            } catch (IOException e) {
+                System.err.println("Ошибка сети: " + e.getMessage());
+                log.warn("Ошибка сети (попытка {}): {}", attempt, e.getMessage());
             }
 
-            Thread.sleep(INTER_WAIT_SLEEP_TIMEOUT);
+            if (attempt < MAX_RETRIES) {
+                try {
+                    System.out.printf("Пауза %d мс перед следующей попыткой...%n", RETRY_DELAY_MS);
+                    Thread.sleep(RETRY_DELAY_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new ServerUnavailableException("Подключение прервано");
+                }
+            }
         }
-        return sourceAddress;
+
+        String errorMsg = "Сервер недоступен после " + MAX_RETRIES + " попыток";
+        System.err.println(errorMsg);
+        throw new ServerUnavailableException(errorMsg);
     }
 
-    public Collection<CommandDefinition> sendHello() throws IllegalAccessException {
-        Object commandDefinitions = sendData(CLIENT_ID);
-        if (commandDefinitions instanceof Collection) {
-            return (Collection<CommandDefinition>) commandDefinitions;
+    public static class ServerUnavailableException extends Exception {
+        public ServerUnavailableException(String message) {
+            super(message);
         }
-        throw new IllegalArgumentException("�������� ����� �� ������� �� ������� �����������: " + commandDefinitions);
-    }
-
-    public ExecutionResponse sendCommand(CommandRequest commandRequest) throws IllegalAccessException {
-        Object commandResponse = sendData(commandRequest);
-        if (commandResponse instanceof ExecutionResponse) {
-            return (ExecutionResponse) commandResponse;
+        public ServerUnavailableException(String message, Throwable cause) {
+            super(message, cause);
         }
-        throw new IllegalArgumentException("�������� ����� �� ������� �� �������: " + commandResponse);
     }
-
-
 }

@@ -25,20 +25,33 @@ public class ClientApplication {
         this.port = port;
     }
 
-    public void start() throws IllegalAccessException {
-        client.ClientConnector clientConnector = new client.ClientConnector(ip, port);
-      try {
-          commandDefinitions = clientConnector.sendHello();
-      }
-      catch (IllegalAccessException e) {
-          logger.error("Ошибка: ", e);
-      }
 
-        try (AbstractInput input = new ConsoleInput()) {
-            ClientInputProcessor inputProcessor = new ClientInputProcessor(commandDefinitions, clientConnector);
-            inputProcessor.processInput(input, true);
-        } catch (Exception e) {
-            logger.error("Ошибка: ", e);
+        public void start() {
+            logger.info("Подключение к серверу {}:{}", ip.getHostAddress(), port);
+
+            ClientConnector clientConnector = null; // Выносим объявление наружу
+
+            try {
+                clientConnector = new ClientConnector(ip, port);
+                commandDefinitions = clientConnector.sendHello();
+            } catch (ClientConnector.ServerUnavailableException e) {
+                logger.error("Ошибка подключения: {}", e.getMessage());
+                System.exit(1);
+                return;
+            }
+
+            // Теперь clientConnector доступен в этом scope
+            try (AbstractInput input = new ConsoleInput()) {
+                ClientInputProcessor inputProcessor = new ClientInputProcessor(
+                        commandDefinitions,
+                        clientConnector // Теперь переменная доступна
+                );
+                inputProcessor.processInput(input, true);
+            } catch (Exception e) {
+                logger.error("Ошибка в работе клиента: ", e);
+                System.exit(2);
+            }
         }
     }
-}
+
+

@@ -21,7 +21,6 @@ dependencies {
     implementation project(':common')
 
     // Реализация логгера (выберите одну)
-    implementation 'ch.qos.logback:logback-classic:1.4.7'
     implementation 'com.thoughtworks.xstream:xstream:1.4.20'  // Основная библиотека XStream
     implementation 'xmlpull:xmlpull:1.1.3.1'
     // Дополнительная зависимость для работы с XML

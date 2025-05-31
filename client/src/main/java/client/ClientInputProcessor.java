@@ -92,13 +92,8 @@ public class ClientInputProcessor {
         } else if (commandDefinition == CommandDefinition.exit) {
             exitCommand.execute();
         }
-        try {
-            ExecutionResponse commandResponse = clientConnector.sendCommand(commandRequest);
-            processResponse(commandResponse);
-        }
-        catch (IllegalAccessException e) {
-            logger.error("Произошла ошибка", e);
-        }
+        ExecutionResponse commandResponse = clientConnector.sendCommand(commandRequest);
+        processResponse(commandResponse);
     }
 
     private void runExecuteScript(CommandRequest commandRequest) throws Exception {
