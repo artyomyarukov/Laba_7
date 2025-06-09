@@ -115,7 +115,7 @@ public class ClientConnector {
                     buffer.flip();
                     return SerializationUtils.INSTANCE.deserialize(buffer.array());
                 }
-                // Короткая пауза для снижения нагрузки на CPU
+
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {

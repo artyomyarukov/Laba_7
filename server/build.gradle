@@ -63,3 +63,7 @@ jar {
 run {
     systemProperty "file.encoding", "utf-8"
 }
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}

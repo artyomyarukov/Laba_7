@@ -10,18 +10,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.UUID;
 
 public class ClientApplication {
+    private static final String SERVER_IP = "192.168.10.80";
     private static final Logger logger = LoggerFactory.getLogger(ClientApplication.class);
     private final InetAddress ip;
     private final int port;
     public static final UUID CLIENT_ID = UUID.randomUUID();
     private Collection<CommandDefinition> commandDefinitions;
 
-    public ClientApplication(InetAddress ip, int port) {
-        this.ip = ip;
+    public ClientApplication(InetAddress ip, int port) throws UnknownHostException {
+        this.ip =InetAddress.getByName(SERVER_IP);;
         this.port = port;
     }
 
