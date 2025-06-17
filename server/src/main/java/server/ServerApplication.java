@@ -65,24 +65,38 @@ public class ServerApplication implements IHistoryProvider {
     private void startConsoleThread() {
         Thread consoleThread = new Thread(() -> {
             Scanner scanner = new Scanner(System.in);
-            System.out.println("Сервер запущен. Введите '/exit' для остановки:");
+            System.out.println("Сервер запущен. Введите 'exit' для остановки:");
 
             while (isRunning) {
                 try {
                     String input = scanner.nextLine().trim();
-                    if ("/exit".equalsIgnoreCase(input)) {
+                    if ("exit".equalsIgnoreCase(input)) {
                         logger.log(Level.INFO, "Получена команда на завершение работы");
                         isRunning = false;
                         selector.wakeup();  // Прерываем select() для немедленного выхода
                         break;
                     }
+                    if("save".equalsIgnoreCase(input)) {
+                        try{
+                            CommandWithArgument command = new CommandWithArgument(CommandDefinition.save, filename);
+                            requestHandler.getCommandController().handle(new CommandRequest(command, null, null));
+                            logger.info("Коллекция сохранена");
+                        }
+                        catch(Exception e){
+                            logger.log(Level.SEVERE, "Ошибка при сохранении коллекции", e)
+                            ;
+                        }
+
+                    }
+
+
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Ошибка чтения консоли", e);
                 }
             }
             scanner.close();
         });
-        consoleThread.setDaemon(false);  // Не демон, чтобы не завершался раньше времени
+        consoleThread.setDaemon(false);
         consoleThread.start();
     }
 
@@ -90,11 +104,11 @@ public class ServerApplication implements IHistoryProvider {
         try {
             logger.log(Level.INFO, "Завершение работы сервера...");
 
-            // 1. Сохраняем данные
+            // Сохраняем данные
             CommandWithArgument command = new CommandWithArgument(CommandDefinition.save, filename);
             requestHandler.getCommandController().handle(new CommandRequest(command, null, null));
 
-            // 2. Закрываем ресурсы
+            // Закрываем ресурсы
             if (selector != null) {
                 selector.close();
             }
@@ -109,14 +123,14 @@ public class ServerApplication implements IHistoryProvider {
     }
 
     public void start() {
-        startConsoleThread(); // Запускаем консоль ДО основного цикла
+        startConsoleThread(); // Запускаем консоль до основного цикла
         logger.log(Level.INFO, "Сервер запущен на порту {0}", port);
 
         try {
-            while (isRunning) {  // Используем флаг вместо Thread.interrupted()
+            while (isRunning) {
                 try {
                     int readyChannels = selector.select(SELECT_TIMEOUT);
-                    if (!isRunning) break;  // Немедленный выход при получении команды
+                    if (!isRunning) break;
 
                     if (readyChannels > 0) {
                         processSelectedKeys();

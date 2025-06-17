@@ -23,7 +23,6 @@ public class Storage {
     }
 
 
-
     public void put(String key, City lab) {
         map.put(key, lab);
     }

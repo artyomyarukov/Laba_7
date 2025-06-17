@@ -12,7 +12,7 @@ import java.nio.channels.DatagramChannel;
 import java.util.logging.Logger;
 
 /**
- * Принимает UDP-сообщения от клиентов (неблокирующий режим)
+ * Принимает UDP-сообщения от клиентов неблокирующий режим
  */
 
 public class ServerConnectionListener {

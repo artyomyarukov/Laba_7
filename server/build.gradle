@@ -8,13 +8,13 @@ repositories {
 }
 dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
-    implementation 'org.slf4j:slf4j-api:2.0.7' // или актуальная версия
-    implementation 'ch.qos.logback:logback-classic:1.4.7' // или другая реализация SLF4J
+    implementation 'org.slf4j:slf4j-api:2.0.7'
+    implementation 'ch.qos.logback:logback-classic:1.4.7'
     implementation project(':common')
 
-    // Реализация логгера (выберите одну)
+    // Реализация логгера
 
-    implementation 'com.thoughtworks.xstream:xstream:1.4.20'  // Основная библиотека XStream
+    implementation 'com.thoughtworks.xstream:xstream:1.4.20'
     implementation 'xmlpull:xmlpull:1.1.3.1'
     // Дополнительная зависимость для работы с XML
     compileOnly 'org.projectlombok:lombok:1.18.30'

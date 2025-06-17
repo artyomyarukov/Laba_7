@@ -10,26 +10,35 @@ import lombok.Data;
 import client.client_command.ExecuteScriptCommand;
 import client.client_command.ExitFromProgramCommand;
 import client.input.AbstractInput;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static common.commands.ArgType.LONG;
 import static client.ClientApplication.CLIENT_ID;
 
-
+/*
+обработка команд
+ */
 @Data
-
 public class ClientInputProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(ClientInputProcessor.class);
+    private static final Logger logger = Logger.getLogger(ClientInputProcessor.class.getName());
     public static boolean debug = true;
     private final ClientConnector clientConnector;
     private Collection<CommandDefinition> commandDefinitions;
     private Stack<String> scriptExecutionContext;
     private ExecuteScriptCommand executeScriptCommand;
     private ExitFromProgramCommand exitCommand;
+
+    static {
+        // Настройка формата вывода логов
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "%4$s: %5$s %n");
+        System.setProperty("file.encoding", "UTF-8");
+
+    }
 
     public ClientInputProcessor(Collection<CommandDefinition> commandDefinitions, ClientConnector clientConnector) {
         this.scriptExecutionContext = new Stack<>();
@@ -70,23 +79,24 @@ public class ClientInputProcessor {
             }
         }
         if (cityItemAssembler != null) {
-            logger.error("Внимание! У вас есть невыполненная последняя команда - недостаточно полей введено, " + commandWithArgument);
+            logger.log(Level.SEVERE, "Внимание! У вас есть невыполненная последняя команда - недостаточно полей введено, {0}",
+                    commandWithArgument);
         }
     }
 
     private void sendAndProcessRequest(CommandWithArgument commandWithArgument, CityItemAssembler cityItemAssembler) throws Exception {
         CommandDefinition commandDefinition = commandWithArgument.getCommandDefinition();
-        if(commandDefinition.hasElement()){
-            if (cityItemAssembler == null){
+        if (commandDefinition.hasElement()) {
+            if (cityItemAssembler == null) {
                 throw new IllegalArgumentException("Вы не передали элемент на команду, которой он необходим: " + commandWithArgument);
             }
-        }
-        else{
-            if (cityItemAssembler != null){
+        } else {
+            if (cityItemAssembler != null) {
                 throw new IllegalArgumentException("Вы передали элемент на команду, которой он не нужен: " + commandWithArgument);
             }
         }
-        CommandRequest commandRequest = new CommandRequest(commandWithArgument, cityItemAssembler == null ? null : cityItemAssembler.getCity(), CLIENT_ID);
+        CommandRequest commandRequest = new CommandRequest(commandWithArgument,
+                cityItemAssembler == null ? null : cityItemAssembler.getCity(), CLIENT_ID);
         if (commandDefinition == CommandDefinition.execute_script) {
             runExecuteScript(commandRequest);
         } else if (commandDefinition == CommandDefinition.exit) {
@@ -100,7 +110,7 @@ public class ClientInputProcessor {
         try {
             executeScriptCommand.execute(commandRequest.getCommandWithArgument().getArgument());
         } catch (Exception e) {
-            logger.error("Произошла ошибка при выполнении скрипта", e);
+            logger.log(Level.SEVERE, "Произошла ошибка при выполнении скрипта", e);
         }
     }
 
@@ -113,24 +123,19 @@ public class ClientInputProcessor {
 
     private void processResponse(ExecutionResponse commandResponse) {
         if (commandResponse.getError() == null) {
-            System.out.println((commandResponse.getOutput()));
+            System.out.println(commandResponse.getOutput());
         } else {
             displayCommonError(commandResponse.getError());
         }
-
     }
 
     private CommandWithArgument parseLineAsCommand(String line) {
         String[] splittedLine = line.trim().split("\\s+");
-        CommandWithArgument result = null;
         CommandDefinition commandDefinition;
         try {
             commandDefinition = CommandDefinition.valueOf(splittedLine[0]);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Такой команды НЕТ: " + splittedLine[0], e);
-        }
-        if (commandDefinition == null) {
-            throw new IllegalArgumentException("Такой команды НЕТ: " + splittedLine[0]);
         }
         if (!commandDefinition.hasArg() && splittedLine.length >= 2) {
             throw new IllegalArgumentException("Слишком много аргументов, ожидалось 0: " + line);
@@ -146,8 +151,7 @@ public class ClientInputProcessor {
                 }
             }
         }
-        result = new CommandWithArgument(commandDefinition, splittedLine.length == 2 ? splittedLine[1] : null);
-        return result;
+        return new CommandWithArgument(commandDefinition, splittedLine.length == 2 ? splittedLine[1] : null);
     }
 
     public void setScriptExecutionContext(String path) {
@@ -163,15 +167,6 @@ public class ClientInputProcessor {
     }
 
     private void displayCommonError(Exception e) {
-        logger.error(e.getMessage());
+        logger.log(Level.SEVERE, e.getMessage());
     }
-
-    /*
-    все команды создаются при инициализации - только один раз, при этом в конструктор передается CityService (сервисный слой, который работает со storage - моя коллекция + crud)
-    view - InputProcessor должен сформировать CommandRequest, отправить на контроллер CommandController
-    CommandRequest состоит из имени команды, ее аргумента и полностью собранного City элемента
-    контроллер должен вызвать метод команды Command.execute и передать туда аргумент и City
-    Результат работы команды оборачивается в CommandResponse - строка или ошибка, и возвращается в InputProcessor
-
-     */
 }

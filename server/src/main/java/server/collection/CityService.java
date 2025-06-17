@@ -80,7 +80,7 @@ public class CityService {
     public static String sortMapAndStringify(Map<String, City> filteredMap) {
         return filteredMap.entrySet()
                 .stream()
-                .sorted(Map.Entry.comparingByValue()) // сортировка по значению
+                .sorted(Map.Entry.comparingByValue(Comparator.comparing(City::getName))) // Сортировка по названию
                 .map(entry -> entry.getKey() + " = " + entry.getValue())
                 .collect(Collectors.joining("\n"));
     }
@@ -95,6 +95,13 @@ public class CityService {
     public String getCitiesSortedByPopulation() {
         return storage.getMap().values().stream()
                 .sorted(Comparator.comparingInt(City::getPopulation))  // Сортировка по населению
+                .map(city -> city.getName() + " (население: " + city.getPopulation() + ")")
+                .collect(Collectors.joining("\n"));
+    }
+
+    public String getAscending() {
+        return storage.getMap().values().stream()
+                .sorted(Comparator.comparingInt(City::getPopulation).reversed())  // Обратная сортировка по населению
                 .map(city -> city.getName() + " (население: " + city.getPopulation() + ")")
                 .collect(Collectors.joining("\n"));
     }

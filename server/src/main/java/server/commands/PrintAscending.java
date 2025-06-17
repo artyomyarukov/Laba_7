@@ -12,12 +12,12 @@ public class PrintAscending extends Command {
     CityService cityService;
 
     public PrintAscending(CityService cityService) {
-        super(CommandDefinition.print_ascending, "вывести элементы коллекции в порядке возрастания");
+        super(CommandDefinition.print_ascending, "вывести элементы коллекции в порядке убывания");
         this.cityService = cityService;
     }
     @Override
     public ExecutionResponse execute() {
 
-        return new ExecutionResponse(cityService.sortedByAreaCollection());
+        return new ExecutionResponse(cityService.getAscending());
     }
 }

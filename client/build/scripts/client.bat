@@ -70,7 +70,7 @@ goto fail
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\client.jar;%APP_HOME%\lib\common.jar;%APP_HOME%\lib\logback-classic-1.4.7.jar;%APP_HOME%\lib\slf4j-api-2.0.7.jar;%APP_HOME%\lib\xstream-1.4.20.jar;%APP_HOME%\lib\mxparser-1.2.2.jar;%APP_HOME%\lib\xmlpull-1.1.3.1.jar;%APP_HOME%\lib\logback-core-1.4.7.jar
+set CLASSPATH=%APP_HOME%\lib\client.jar;%APP_HOME%\lib\common.jar;%APP_HOME%\lib\xstream-1.4.20.jar;%APP_HOME%\lib\mxparser-1.2.2.jar;%APP_HOME%\lib\xmlpull-1.1.3.1.jar;%APP_HOME%\lib\logback-classic-1.4.7.jar;%APP_HOME%\lib\slf4j-api-2.0.7.jar;%APP_HOME%\lib\logback-core-1.4.7.jar
 
 
 @rem Execute client

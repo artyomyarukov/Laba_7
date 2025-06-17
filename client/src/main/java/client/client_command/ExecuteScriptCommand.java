@@ -1,22 +1,21 @@
 package client.client_command;
-import client.ClientInputProcessor;
 
+import client.ClientInputProcessor;
 import client.input.AbstractInput;
 import client.input.FileInput;
 import common.commands.Command;
 import common.utility.ExecutionResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static common.commands.CommandDefinition.execute_script;
 
-
 public class ExecuteScriptCommand extends Command {
     private final ClientInputProcessor inputProcessor;
-    private static final Logger logger = LoggerFactory.getLogger(ExecuteScriptCommand.class);
+    private static final Logger logger = Logger.getLogger(ExecuteScriptCommand.class.getName());
 
     public ExecuteScriptCommand(ClientInputProcessor inpPr) {
         super(execute_script, "Аргумент - filename. Считать и исполнить скрипт из указанного файла. В скрипте содержатся команды в таком же виде, в котором их вводит пользователь в интерактивном режиме.");
@@ -25,10 +24,13 @@ public class ExecuteScriptCommand extends Command {
 
     public ExecutionResponse execute(String arg) throws IOException {
         File file = new File(arg);
-        logger.info("-------------------- Начало выполнения файла: " + file.getCanonicalPath() + " ---------------------------------------------------------------------");
+        logger.log(Level.INFO, "-------------------- Начало выполнения файла: {0} ---------------------------------------------------------------------",
+                file.getCanonicalPath());
+
         if (inputProcessor.checkContext(file.getCanonicalPath())) {
             throw new IllegalArgumentException("Обнаружен ЦИКЛ, файл: " + file + " не будет открыт");
         }
+
         inputProcessor.setScriptExecutionContext(file.getCanonicalPath());
         try (AbstractInput fileInput = new FileInput(file)) {
             inputProcessor.processInput(fileInput, false);
@@ -40,7 +42,8 @@ public class ExecuteScriptCommand extends Command {
             throw new IllegalArgumentException("Произошла ошибка,принудительное завершение чтения файла", e);
         } finally {
             inputProcessor.exitContext();
-            logger.info("-------------------- Конец выполнения файла: " + file.getCanonicalPath() + " ---------------------------------------------------------------------");
+            logger.log(Level.INFO, "-------------------- Конец выполнения файла: {0} ---------------------------------------------------------------------",
+                    file.getCanonicalPath());
         }
         return new ExecutionResponse(EMPTY_RESULT);
     }

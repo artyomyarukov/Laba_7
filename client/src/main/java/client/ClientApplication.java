@@ -6,17 +6,25 @@ import client.input.ConsoleInput;
 import client.ClientInputProcessor;
 
 import common.commands.CommandDefinition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.UUID;
 
+
+/*
+основная логика клиента
+ */
+
+
 public class ClientApplication {
     private static final String SERVER_IP = "192.168.10.80";
-    private static final Logger logger = LoggerFactory.getLogger(ClientApplication.class);
+    private static final Logger logger = Logger.getLogger(ClientApplication.class.getName());
+
     private final InetAddress ip;
     private final int port;
     public static final UUID CLIENT_ID = UUID.randomUUID();
@@ -26,31 +34,38 @@ public class ClientApplication {
         this.ip =InetAddress.getByName(SERVER_IP);;
         this.port = port;
     }
+    static {
+        // Настройка формата вывода логов
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "%4$s: %5$s %n");
+        System.setProperty("file.encoding", "UTF-8");
+
+    }
 
 
         public void start() {
-            logger.info("Подключение к серверу {}:{}", ip.getHostAddress(), port);
+            logger.log(Level.INFO, "Подключение к серверу {0}:{1}", new Object[]{ip, port});
 
-            ClientConnector clientConnector = null; // Выносим объявление наружу
+            ClientConnector clientConnector = null;
 
             try {
                 clientConnector = new ClientConnector(ip, port);
                 commandDefinitions = clientConnector.sendHello();
             } catch (ClientConnector.ServerUnavailableException e) {
-                logger.error("Ошибка подключения: {}", e.getMessage());
+                logger.log(Level.SEVERE, "Ошибка подключения: " + e.getMessage());
                 System.exit(1);
                 return;
             }
 
-            // Теперь clientConnector доступен в этом scope
+
             try (AbstractInput input = new ConsoleInput()) {
                 ClientInputProcessor inputProcessor = new ClientInputProcessor(
                         commandDefinitions,
-                        clientConnector // Теперь переменная доступна
+                        clientConnector
                 );
                 inputProcessor.processInput(input, true);
             } catch (Exception e) {
-                logger.error("Ошибка в работе клиента: ", e);
+                logger.log(Level.SEVERE, "Ошибка в работе клиента " + e.getMessage());
                 System.exit(2);
             }
         }

@@ -2,14 +2,13 @@ package client.client_command;
 
 import common.commands.Command;
 import common.utility.ExecutionResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static common.commands.CommandDefinition.exit;
 
 
 public class ExitFromProgramCommand extends Command {
-    private static final Logger logger = LoggerFactory.getLogger(ExitFromProgramCommand.class);
+    private static final Logger logger = Logger.getLogger(ExecuteScriptCommand.class.getName());
     public ExitFromProgramCommand() {
         super(exit, "завершить программу клиента (без сохранения в файл)");
     }
